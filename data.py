@@ -1,4 +1,6 @@
 
+
+
 """
 # -- --------------------------------------------------------------------------------------------------- -- #
 # -- project: A SHORT DESCRIPTION OF THE PROJECT                                                         -- #
@@ -9,4 +11,14 @@
 # -- --------------------------------------------------------------------------------------------------- -- #
 """
 
-dict_test = {'key_a': 'a', 'key_b': 'b'}
+import pandas as pd
+import yfinance as yf
+
+
+
+def f_import_ipc(ticker):
+
+    ipc = pd.DataFrame(yf.Ticker(ticker).history(start="2019-04-30", end="2021-04-30", interval= "1wk")["Close"])
+
+    return ipc
+
