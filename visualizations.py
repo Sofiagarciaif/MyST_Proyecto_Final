@@ -21,24 +21,24 @@ from scipy.stats import shapiro
 from statsmodels.tsa.stattools import adfuller
 
 
-def f_grafica_hist(ipc):
+def f_grafica_hist(pmi):
     
-    ipc.plot(figsize=(10,5));
-    plt.ylabel("Puntos IPC");
-    plt.title("Histórico IPC");
+    pmi.plot(figsize=(10,5));
+    plt.ylabel("Puntos PMI");
+    plt.title("Histórico PMI");
     
     return plt.show()
 
-def f_autocorr(ipc):
+def f_autocorr(pmi):
     
-    a = plot_acf(ipc);
-    b = plot_pacf(ipc);
+    a = plot_acf(pmi);
+    b = plot_pacf(pmi);
     
     return(a,b)
 
-def f_dist_normal(ipc):
+def f_dist_normal(pmi):
     
-    stat, p = shapiro(ipc)
+    stat, p = shapiro(pmi)
     
     alpha = 0.05
     if p > alpha:
@@ -48,9 +48,9 @@ def f_dist_normal(ipc):
     
     return(pv)
     
-def f_estacionalidad(ipc):
+def f_estacionalidad(pmi):
     rcParams['figure.figsize'] = 16, 6
-    decomposition = sm.tsa.seasonal_decompose(ipc, model='additive', period=5)
+    decomposition = sm.tsa.seasonal_decompose(pmi, model='additive', period=12)
     decomposition.plot()
 
     return plt.show()
@@ -68,4 +68,9 @@ def f_estacionariedad(serie_de_tiempo):
     return test
 
 
-
+def f_atipicos(pmi):
+    
+    plt.boxplot(pmi)
+    plt.title("Detección de Atípicos")
+    
+    return plt.show()

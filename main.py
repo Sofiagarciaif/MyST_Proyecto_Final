@@ -14,7 +14,10 @@ import data as dt
 import functions as fn
 import visualizations as vs
 
-D_IPC = dt.f_import_ipc("^MXX")
+PMI = dt.f_import_pmi()
 
-HIST= vs.f_grafica_hist(D_IPC)
+HIST= vs.f_grafica_hist(PMI)
+
+
+
 
