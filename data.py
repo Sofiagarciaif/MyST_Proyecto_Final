@@ -19,8 +19,8 @@ def Replace(str1):
 
 
 def f_import_pmi():
-
     pmi = pd.read_excel("Indice PMI sector servicios GBP.xlsx")
+    
     actual = [float(Replace(pmi["Actual"][i])) for i in range(0, len(pmi["Actual"]))]
     prevision = [float(Replace(pmi["Prevision"][i])) for i in range(0, len(pmi["Prevision"]))]
     anterior = [float(Replace(pmi["Anterior"][i])) for i in range(0, len(pmi["Anterior"]))]
@@ -34,15 +34,21 @@ def f_import_pmi():
             hours.append(i)
         else:
             hours.append(datetime.datetime.strptime(i.strip(), '%H:%M').time())
-    
+            
     pmi["Actual"] = actual
     pmi["Prevision"] = prevision
     pmi["Anterior"] = anterior
     pmi["Fecha de publicacion"] = fecha
     pmi["Hora"] = hours
     pmi.set_index("Fecha de publicacion", inplace=True);
-
-    return pmi
+    
+    pmi["Hora"] = [datetime.datetime.combine(pmi.index[i], pmi["Hora"][i]) for i in range(0, len(pmi.index))]
+    pmi.rename(columns = {"Hora": "Fecha y hora"}, inplace=True)
+    pmi.set_index("Fecha y hora", inplace=True)
+    pmi.drop(pmi.index[0], inplace=True)
+    A= pmi.drop(['Unnamed: 5'], axis=1)
+    
+    return A
 
 
 
