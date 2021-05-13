@@ -74,3 +74,53 @@ def f_atipicos(pmi):
     plt.title("Detección de Atípicos")
     
     return plt.show()
+
+
+
+def reglin(x,y):
+    x = sm.add_constant(x)
+    model = sm.OLS(y,x).fit()
+    B0 = model.params[0]
+    B1 = model.params[1]
+    x = x[:, 1]
+    
+    x2 = np.linspace(x.min(), x.max(),100)
+    y_hat = x2 * B1 + B0
+    plt.scatter(x, y, alpha=1)
+    plt.plot(x2, y_hat, "r", alpha=1)
+    plt.xlabel("Tiempo")
+    plt.ylabel("PMI")
+    return model, B0, B1
+
+
+def reglinshow(pmi):
+    
+    plt.figure(figsize=(10,5))
+    pmi.reset_index(inplace=True)
+    reglin(pmi.index, pmi["Actual"])
+    pmi.set_index("Fecha y hora", inplace=True)
+    plt.title("Regresión lineal");
+    
+    return plt.show()
+
+
+def residuosreg(pmi):
+    
+    plt.figure(figsize=(10,5))
+    plt.title("Gráfica de residuos")
+    pmi.reset_index(inplace=True)
+    modelo, B0, B1 = reglin(pmi.index, pmi["Actual"])
+    residuales = modelo.resid
+    plt.errorbar(pmi.index, pmi["Actual"], xerr=0, yerr=[residuales, 0*residuales], linestyle = "None", color = "Green")
+    pmi.set_index("Fecha y hora", inplace=True)
+    
+    return plt.show()
+
+
+
+
+
+
+
+
+

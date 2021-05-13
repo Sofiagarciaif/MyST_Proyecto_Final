@@ -21,6 +21,7 @@ from scipy.stats import shapiro
 from statsmodels.tsa.stattools import adfuller
 from datetime import timedelta
 import datetime
+import math as m
 
 
 
@@ -142,6 +143,7 @@ def f_metricas(indicador,precios_gbp_usd):
         pips_alcistas.append(t_max - t_0)
         
     indicador["Pips Alcistas"] = pips_alcistas
+    indicador["Pips Alcistas"] = [m.floor(abs(i* 1000)) for i in  indicador["Pips Alcistas"]]
     
     #(Pips Bajistas) Open(t_0) – Low(t_0 : t_30) 
     
@@ -157,18 +159,20 @@ def f_metricas(indicador,precios_gbp_usd):
         pips_bajistas.append(t_0 - t_min)
         
     indicador["Pips Bajistas"] = pips_bajistas
+    indicador["Pips Bajistas"] = [m.floor(abs(i* 1000)) for i in  indicador["Pips Bajistas"]]
     
     #(Volatilidad) High(t_-30 : t_30) ,  - mínimo low (t_-30:t_30)
     
-    high_hasta_t_30 = []
+    high_hasta_t_30_2 = []
     for i in iterador_t_0: 
-        high_hasta_t_30.append(max(df_filtrado_por_indicador.iloc[i - 30: i + 31, 1]))
-    
-    low_hasta_t_30 = []
+        high_hasta_t_30_2.append(max(df_filtrado_por_indicador.iloc[i - 30: i + 31, 1]))
+        
+    low_hasta_t_30_2 = []
     for i in iterador_t_0: 
-        low_hasta_t_30.append(min(df_filtrado_por_indicador.iloc[i - 30: i + 31,1]))
+        low_hasta_t_30_2.append(min(df_filtrado_por_indicador.iloc[i - 30: i + 31, 2]))
 
-    indicador["Volatilidad"] = [high_hasta_t_30[i] - low_hasta_t_30[i] for i in range(0, len(high_hasta_t_30))]
+    indicador["Volatilidad"] = [high_hasta_t_30_2[i] - low_hasta_t_30_2[i] for i in range(0, len(high_hasta_t_30))]
+    indicador["Volatilidad"] = [m.floor(abs(i* 1000)) for i in  indicador["Volatilidad"]]
      
     return indicador
 
