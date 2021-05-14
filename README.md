@@ -1,6 +1,6 @@
+
 ## Description
-*Insert here a brief description of the project, including, purpose, technologies used and context 
-where it was created.*
+Se analiza el comportamiento del GBD_USD durante el comunicado del indicador PURCHASING MANAGER INDEX de la economía UK.
 
 ## Install dependencies
 
