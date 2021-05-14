@@ -11,18 +11,9 @@
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import yfinance as yf
-from statsmodels.graphics.tsaplots import plot_acf
-from statsmodels.graphics.tsaplots import plot_pacf
-import statsmodels.api as sm
-from pylab import rcParams
-from scipy.stats import shapiro
-from statsmodels.tsa.stattools import adfuller
-from datetime import timedelta
 import datetime
 import math as m
-
+import pyswarms as ps
 
 
 def escenarios_tabla():
@@ -175,6 +166,132 @@ def f_metricas(indicador,precios_gbp_usd):
     indicador["Volatilidad"] = [m.floor(abs(i* 1000)) for i in  indicador["Volatilidad"]]
      
     return indicador
+
+
+def f_escenarios(data):
+    df_escenarios = data[['Escenario', 'Direccion', 
+                          'Pips Alcistas', 'Pips Bajistas', 'Volatilidad']] 
+    return df_escenarios
+
+
+def f_decisiones(Operacion, SL, TP, Volumen):
+    df_decisiones = pd.DataFrame(columns=['Escenario', 'Operacion', 'SL', 'TP', 'Volumen']) 
+    df_decisiones['Escenario'] = ['A', 'B', 'C', 'D'] 
+    df_decisiones['Operacion'] = Operacion 
+    df_decisiones['SL'] = SL 
+    df_decisiones['TP'] = TP 
+    df_decisiones['Volumen'] = Volumen 
+    return df_decisiones 
+
+
+def f_backtest(df_escenarios, df_decisiones,capital_inicial):
+    
+    df_backtest = pd.merge(df_escenarios, df_decisiones)
+    df_backtest['Resultado'] = 0
+    df_backtest['Pips'] = 0
+    df_backtest['Capital'] = 0
+    df_backtest['Capital_acumulado'] = 0
+
+    for i in range(len(df_backtest)):
+      #PIPS  
+        if df_backtest.loc[i, 'Operacion'] == 'Venta':
+            if df_backtest.loc[i, 'Pips Alcistas'] >= df_backtest.loc[i, 'SL']:
+                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'SL'] * (-1)
+            elif df_backtest.loc[i, 'Pips Bajistas'] >= df_backtest.loc[i, 'TP']:
+                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'TP']
+        if df_backtest.loc[i, 'Operacion'] == 'Compra':
+            if df_backtest.loc[i, 'Pips Alcistas'] >= df_backtest.loc[i, 'TP']:
+                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'TP']
+            elif df_backtest.loc[i, 'Pips Bajistas'] >= df_backtest.loc[i, 'SL']:
+                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'SL'] * (-1)
+    #RESULTADO  
+        if df_backtest.loc[i, 'Pips'] >= 0:
+            df_backtest.loc[i, 'Resultado'] = "Ganada"
+        else:
+            df_backtest.loc[i, 'Resultado'] = "Perdida"
+    #CAPITAL
+        df_backtest.loc[i, 'Capital'] = df_backtest.loc[i, 'Volumen'] * df_backtest.loc[i, 'Pips'] / 10000
+    #CAPITAL ACUMULADO
+    df_backtest.loc[0, 'Capital_acumulado'] = capital_inicial + df_backtest.loc[0, 'Capital']
+    for i in range(1, len(df_backtest)):
+        df_backtest.loc[i, 'Capital_acumulado'] = df_backtest.loc[i - 1, 'Capital_acumulado'] + df_backtest.loc[i, 'Capital']
+        
+    del df_backtest['Direccion']
+    del df_backtest['Pips Alcistas']
+    del df_backtest['Pips Bajistas']
+    del df_backtest['Volatilidad']
+    del df_backtest['SL']
+    del df_backtest['TP']
+    return df_backtest
+
+
+def f_minimizar(df_backtest):
+    maximo = max(df_backtest.Capital_acumulado)
+    minimo = min(df_backtest.Capital_acumulado)
+    posicion_max = df_backtest.index.get_indexer_for(df_backtest[df_backtest.Capital_acumulado == maximo].index)[0]
+    posicion_min = df_backtest.index.get_indexer_for(df_backtest[df_backtest.Capital_acumulado == minimo].index)[0]
+
+    # primero es el Drawup
+    if posicion_max < posicion_min:
+        # Drowdown
+        drawdown_valor_inicio = df_backtest['Capital_acumulado'][posicion_max]
+        drawdown_valor_fin = df_backtest['Capital_acumulado'][posicion_min]
+    else:
+        drawdown_valor_inicio = 100000
+        drawdown_valor_fin = df_backtest['Capital_acumulado'][posicion_min]
+
+    drawdown = drawdown_valor_fin - drawdown_valor_inicio
+
+    return drawdown
+
+
+def f_optimizacion(df_escenarios, lb, ub, operacion):
+    max_bound = ub
+    min_bound = lb
+    bounds = (min_bound, max_bound)
+
+    def drawdown_neg(x):
+        sl = x[:4]
+        tp = x[4:8]
+        volumen = x[8:12]
+        escenarios = f_decisiones(operacion, sl, tp, volumen)
+        capital_inicial= 100000
+        backtesting = f_backtest(df_escenarios, escenarios, capital_inicial)
+        drawdown = f_minimizar(backtesting)
+
+        return drawdown*-1
+
+    options = {'c1': 5, 'c2': 3, 'w': 0.9}
+    # Call instance of PSO with bounds argument
+    optimizer = ps.single.GlobalBestPSO(n_particles=12, dimensions=len(ub), options=options, bounds=bounds)
+    # Perform optimization
+    cost, pos = optimizer.optimize(drawdown_neg, iters=100)
+
+    operacion = ['Compra', 'Compra', 'Venta', 'Venta']
+    sl = pos[:4]
+    tp = pos[4:8]
+    volumen = pos[8:12]
+
+    df_decisiones_optimo = f_decisiones(operacion, sl, tp, volumen)
+
+    return cost, df_decisiones_optimo, optimizer
+
+
+def f_escenarios_test(data):
+    df_escenarios_test = data
+    df_escenarios_test = df_escenarios_test.iloc[12:, :]
+    df_escenarios_test = df_escenarios_test.reset_index()
+    return df_escenarios_test
+
+
+
+
+
+
+
+
+
+
 
 
 

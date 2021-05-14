@@ -12,13 +12,13 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import yfinance as yf
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.graphics.tsaplots import plot_pacf
 import statsmodels.api as sm
 from pylab import rcParams
 from scipy.stats import shapiro
 from statsmodels.tsa.stattools import adfuller
+import plotly.graph_objects as go
 
 
 def f_grafica_hist(pmi):
@@ -28,6 +28,7 @@ def f_grafica_hist(pmi):
     plt.title("Histórico PMI");
     
     return plt.show()
+
 
 def f_autocorr(pmi):
     
@@ -76,7 +77,6 @@ def f_atipicos(pmi):
     return plt.show()
 
 
-
 def reglin(x,y):
     x = sm.add_constant(x)
     model = sm.OLS(y,x).fit()
@@ -117,6 +117,34 @@ def residuosreg(pmi):
     return plt.show()
 
 
+def f_graph_train(df_backtest_train,df_backtest_optimo_train):
+    fig = go.Figure()
+    df_backtest_train = df_backtest_train.reset_index()
+    capital = df_backtest_train['Capital_acumulado']
+    date = df_backtest_train['Volumen']
+    
+    fig.add_trace(go.Scatter(x=date, y=capital, line_shape="linear", mode='lines', name='backtest no optimizado',
+                             line=dict(color='blue')
+                             ))
+    capital_opt = df_backtest_optimo_train['Capital_acumulado']
+    fig.add_trace(go.Scatter(x=date, y=capital_opt, line_shape="linear", mode='lines', name='backtest optimizado',
+                             line=dict(color='black')
+                             ))
+    fig.show()
+
+
+def f_graph_test(df_backtest_test,df_backtest_optimo_test):
+    fig = go.Figure()
+    capital = df_backtest_test['Capital_acumulado']
+    date = df_backtest_test['Volumen']
+    fig.add_trace(go.Scatter(x=date, y=capital, line_shape="linear", mode='lines', name='backtest prueba no optimizado',
+                             line=dict(color='blue')
+                             ))
+    capital_opt = df_backtest_optimo_test['Capital_acumulado']
+    fig.add_trace(go.Scatter(x=date, y=capital_opt, line_shape="linear", mode='lines', name='backtest prueba optimizado',
+                             line=dict(color='black')
+                             ))
+    fig.show()
 
 
 
