@@ -121,7 +121,7 @@ def f_graph_train(df_backtest_train,df_backtest_optimo_train):
     fig = go.Figure()
     df_backtest_train = df_backtest_train.reset_index()
     capital = df_backtest_train['Capital_acumulado']
-    date = df_backtest_train['Volumen']
+    date = df_backtest_train['Fecha y hora']
     
     fig.add_trace(go.Scatter(x=date, y=capital, line_shape="linear", mode='lines', name='backtest no optimizado',
                              line=dict(color='blue')
@@ -136,7 +136,7 @@ def f_graph_train(df_backtest_train,df_backtest_optimo_train):
 def f_graph_test(df_backtest_test,df_backtest_optimo_test):
     fig = go.Figure()
     capital = df_backtest_test['Capital_acumulado']
-    date = df_backtest_test['Volumen']
+    date = df_backtest_test['Capital_acumulado']
     fig.add_trace(go.Scatter(x=date, y=capital, line_shape="linear", mode='lines', name='backtest prueba no optimizado',
                              line=dict(color='blue')
                              ))

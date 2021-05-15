@@ -169,12 +169,31 @@ def f_metricas(indicador,precios_gbp_usd):
 
 
 def f_escenarios(data):
+    """
+    Paramemters
+    -----------
+    data: Datos historicos descargados 
+    ---------
+    returns
+    -------
+    data: Data Frame reducido con columnas especificas
+    """
+    
     df_escenarios = data[['Escenario', 'Direccion', 
                           'Pips Alcistas', 'Pips Bajistas', 'Volatilidad']] 
     return df_escenarios
 
 
 def f_decisiones(Operacion, SL, TP, Volumen):
+    """
+    Paramemters
+    -----------
+    data: Datos historicos descargados 
+    ---------
+    returns
+    -------
+    data: Dataframe de decision 
+    """
     df_decisiones = pd.DataFrame(columns=['Escenario', 'Operacion', 'SL', 'TP', 'Volumen']) 
     df_decisiones['Escenario'] = ['A', 'B', 'C', 'D'] 
     df_decisiones['Operacion'] = Operacion 
@@ -184,45 +203,55 @@ def f_decisiones(Operacion, SL, TP, Volumen):
     return df_decisiones 
 
 
-def f_backtest(df_escenarios, df_decisiones,capital_inicial):
-    
-    df_backtest = pd.merge(df_escenarios, df_decisiones)
-    df_backtest['Resultado'] = 0
-    df_backtest['Pips'] = 0
-    df_backtest['Capital'] = 0
-    df_backtest['Capital_acumulado'] = 0
+def f_backtest(escenarios, decisiones, capital_inicial):
+    """
+    Paramemters
+    -----------
+    data: 
+    ---------
+    returns
+    -------
+    data
+    """
+    backtest = pd.merge(escenarios, decisiones)
+    backtest['Fecha y hora'] = escenarios.index
+    backtest['Resultado'] = 0
+    backtest['Pips'] = 0
+    backtest['Capital'] = 0
+    backtest['Capital_acumulado'] = 0
 
-    for i in range(len(df_backtest)):
+    for i in range(len(backtest)):
       #PIPS  
-        if df_backtest.loc[i, 'Operacion'] == 'Venta':
-            if df_backtest.loc[i, 'Pips Alcistas'] >= df_backtest.loc[i, 'SL']:
-                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'SL'] * (-1)
-            elif df_backtest.loc[i, 'Pips Bajistas'] >= df_backtest.loc[i, 'TP']:
-                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'TP']
-        if df_backtest.loc[i, 'Operacion'] == 'Compra':
-            if df_backtest.loc[i, 'Pips Alcistas'] >= df_backtest.loc[i, 'TP']:
-                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'TP']
-            elif df_backtest.loc[i, 'Pips Bajistas'] >= df_backtest.loc[i, 'SL']:
-                df_backtest.loc[i, 'Pips'] = df_backtest.loc[i, 'SL'] * (-1)
+        if backtest.loc[i, 'Operacion'] == 'Venta':
+            if backtest.loc[i, 'Pips Alcistas'] >= backtest.loc[i, 'SL']:
+                backtest.loc[i, 'Pips'] = backtest.loc[i, 'SL'] * (-1)
+            elif backtest.loc[i, 'Pips Bajistas'] >= backtest.loc[i, 'TP']:
+                backtest.loc[i, 'Pips'] = backtest.loc[i, 'TP']
+        if backtest.loc[i, 'Operacion'] == 'Compra':
+            if backtest.loc[i, 'Pips Alcistas'] >= backtest.loc[i, 'TP']:
+                backtest.loc[i, 'Pips'] = backtest.loc[i, 'TP']
+            elif backtest.loc[i, 'Pips Bajistas'] >= backtest.loc[i, 'SL']:
+                backtest.loc[i, 'Pips'] = backtest.loc[i, 'SL'] * (-1)
     #RESULTADO  
-        if df_backtest.loc[i, 'Pips'] >= 0:
-            df_backtest.loc[i, 'Resultado'] = "Ganada"
+        if backtest.loc[i, 'Pips'] >= 0:
+            backtest.loc[i, 'Resultado'] = "Ganada"
         else:
-            df_backtest.loc[i, 'Resultado'] = "Perdida"
+            backtest.loc[i, 'Resultado'] = "Perdida"
     #CAPITAL
-        df_backtest.loc[i, 'Capital'] = df_backtest.loc[i, 'Volumen'] * df_backtest.loc[i, 'Pips'] / 10000
+        backtest.loc[i, 'Capital'] = backtest.loc[i, 'Volumen'] * backtest.loc[i, 'Pips'] / 10000
     #CAPITAL ACUMULADO
-    df_backtest.loc[0, 'Capital_acumulado'] = capital_inicial + df_backtest.loc[0, 'Capital']
-    for i in range(1, len(df_backtest)):
-        df_backtest.loc[i, 'Capital_acumulado'] = df_backtest.loc[i - 1, 'Capital_acumulado'] + df_backtest.loc[i, 'Capital']
-        
-    del df_backtest['Direccion']
-    del df_backtest['Pips Alcistas']
-    del df_backtest['Pips Bajistas']
-    del df_backtest['Volatilidad']
-    del df_backtest['SL']
-    del df_backtest['TP']
-    return df_backtest
+    backtest.loc[0, 'Capital_acumulado'] = capital_inicial + backtest.loc[0, 'Capital']
+    for i in range(1, len(backtest)):
+        backtest.loc[i, 'Capital_acumulado'] = backtest.loc[i - 1, 'Capital_acumulado'] + backtest.loc[i, 'Capital']
+
+    del backtest['Direccion']
+    del backtest['Pips Alcistas']
+    del backtest['Pips Bajistas']
+    del backtest['Volatilidad']
+    del backtest['SL']
+    del backtest['TP']
+    backtest.set_index("Fecha y hora", inplace=True)
+    return backtest
 
 
 def f_minimizar(df_backtest):
